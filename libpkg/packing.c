@@ -39,7 +39,8 @@
 #include "private/event.h"
 #include "private/pkg.h"
 
-static const char *packing_set_format(struct archive *a, pkg_formats format);
+static const char *packing_set_format(struct archive *a, pkg_formats format,
+    const char *level);
 
 struct packing {
 	struct archive *aread;
@@ -50,7 +51,7 @@ struct packing {
 
 int
 packing_init(struct packing **pack, const char *path, pkg_formats format,
-    time_t timestamp)
+    const char *compression_level, time_t timestamp)
 {
 	char archive_path[MAXPATHLEN];
 	const char *ext;
@@ -80,7 +81,7 @@ packing_init(struct packing **pack, const char *path, pkg_formats format,
 
 	(*pack)->awrite = archive_write_new();
 	archive_write_set_format_pax_restricted((*pack)->awrite);
-	ext = packing_set_format((*pack)->awrite, format);
+	ext = packing_set_format((*pack)->awrite, format, compression_level);
 	if (ext == NULL) {
 		archive_read_close((*pack)->aread);
 		archive_read_free((*pack)->aread);
@@ -318,7 +319,7 @@ packing_finish(struct packing *pack)
 }
 
 static const char *
-packing_set_format(struct archive *a, pkg_formats format)
+packing_set_format(struct archive *a, pkg_formats format, char *level)
 {
 	const char *notsupp_fmt = "%s is not supported, trying %s";
 
@@ -326,7 +327,7 @@ packing_set_format(struct archive *a, pkg_formats format)
 	case TZS:
 #ifdef HAVE_ARCHIVE_WRITE_ADD_FILTER_ZSTD
 		if (archive_write_add_filter_zstd(a) == ARCHIVE_OK) {
-			if (archive_write_set_filter_option(a, NULL, "compression-level", "20") != ARCHIVE_OK) {
+			if (archive_write_set_filter_option(a, NULL, "compression-level", level) != ARCHIVE_OK) {
 				pkg_emit_error("bad compression-level");
 			}
 			return ("tzst");
@@ -335,17 +336,27 @@ packing_set_format(struct archive *a, pkg_formats format)
 		pkg_emit_error(notsupp_fmt, "zstd", "xz");
 		/* FALLTHRU */
 	case TXZ:
-		if (archive_write_add_filter_xz(a) == ARCHIVE_OK)
+		if (archive_write_add_filter_xz(a) == ARCHIVE_OK) {
+			if (archive_write_set_filter_option(a, NULL, "compression-level", level) != ARCHIVE_OK) {
+				pkg_emit_error("bad compression-level");
+			}
 			return ("txz");
+		}
 		pkg_emit_error(notsupp_fmt, "xz", "bzip2");
 		/* FALLTHRU */
 	case TBZ:
-		if (archive_write_add_filter_bzip2(a) == ARCHIVE_OK)
+		if (archive_write_add_filter_bzip2(a) == ARCHIVE_OK) {
+			if (archive_write_set_filter_option(a, NULL, "compression-level", level) != ARCHIVE_OK) {
+				pkg_emit_error("bad compression-level");
+			}
 			return ("tbz");
 		pkg_emit_error(notsupp_fmt, "bzip2", "gzip");
 		/* FALLTHRU */
 	case TGZ:
-		if (archive_write_add_filter_gzip(a) == ARCHIVE_OK)
+		if (archive_write_add_filter_gzip(a) == ARCHIVE_OK) {
+			if (archive_write_set_filter_option(a, NULL, "compression-level", level) != ARCHIVE_OK) {
+				pkg_emit_error("bad compression-level");
+			}
 			return ("tgz");
 		pkg_emit_error(notsupp_fmt, "gzip", "plain tar");
 		/* FALLTHRU */
