@@ -319,7 +319,7 @@ packing_finish(struct packing *pack)
 }
 
 static const char *
-packing_set_format(struct archive *a, pkg_formats format, char *level)
+packing_set_format(struct archive *a, pkg_formats format, const char *level)
 {
 	const char *notsupp_fmt = "%s is not supported, trying %s";
 
@@ -350,6 +350,7 @@ packing_set_format(struct archive *a, pkg_formats format, char *level)
 				pkg_emit_error("bad compression-level");
 			}
 			return ("tbz");
+		}
 		pkg_emit_error(notsupp_fmt, "bzip2", "gzip");
 		/* FALLTHRU */
 	case TGZ:
@@ -358,6 +359,7 @@ packing_set_format(struct archive *a, pkg_formats format, char *level)
 				pkg_emit_error("bad compression-level");
 			}
 			return ("tgz");
+		}
 		pkg_emit_error(notsupp_fmt, "gzip", "plain tar");
 		/* FALLTHRU */
 	case TAR:

@@ -247,41 +247,33 @@ pkg_create_set_format(struct pkg_create *pc, const char *format)
 {
 	char comp[128] = { 0 };
 	const char *type = NULL;
-	const char *errs = NULL;
 	char *level = NULL;
-	int minval = 0, maxval = 0;
 
 	strlcpy(comp, format, sizeof(comp));
 	type = (const char *)&comp;
-	level = strchr(type, ":");
+	level = strchr(type, ':');
 	if (level != NULL) {
 		level[0] = '\0';
+		level = strchr(format, ':');
 		level++;
 	}
+printf("ALLAN: format=%s level=%s\n", type, level);
 
 	if (strcmp(type, "tzst") == 0) {
 		pc->format = TZS;
-		minval = -1000;
-		maxval = 22;
 	} else if (strcmp(type, "txz") == 0) {
 		pc->format = TXZ;
-		minval = 1;
-		maxval = 9;
 	} else if (strcmp(type, "tbz") == 0) {
 		pc->format = TBZ;
-		minval = 1;
-		maxval = 9;
 	} else if (strcmp(type, "tgz") == 0) {
 		pc->format = TGZ;
-		minval = 1;
-		maxval = 9;
 	} else if (strcmp(type, "tar") == 0) {
 		pc->format = TAR;
 	} else
 		return (false);
 
 	if (level && maxval) {
-		pc->compression_level = strtonum(level, minval, maxval, &errs);
+		pc->compression_level = level;
 		if (errs != NULL)
 			return (false);
 	}

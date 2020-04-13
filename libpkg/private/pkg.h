@@ -333,7 +333,7 @@ struct pkg {
 };
 
 struct pkg_create {
-	uint8_t	compression_level;
+	const char *compression_level;
 	pkg_formats format;
 	time_t timestamp;
 	const char *rootdir;
